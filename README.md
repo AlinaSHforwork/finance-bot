@@ -23,7 +23,7 @@ Edit `.env`:
 
 ```
 TELEGRAM_BOT_TOKEN=<your bot token from @BotFather>
-GEMINI_API_KEY=<your xAI Gemini API key>
+GEMINI_API_KEY=<your Gemini API key>
 DATABASE_URL=postgresql://user:password@localhost:5432/finance_bot
 ```
 
