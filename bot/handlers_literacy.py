@@ -4,11 +4,13 @@ import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from ai.client import generate_quiz_question, get_literacy_concept
+from ai.client import generate_buddha_wisdom, generate_quiz_question, get_literacy_concept
 from db import repository
 from utils.constants import LITERACY_CONCEPTS, QUIZ_TOPICS
 
 logger = logging.getLogger(__name__)
+
+_MAX_BUDDHA_QUERY_LEN = 300
 
 
 async def cmd_learn(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -107,3 +109,39 @@ async def callback_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYP
     )
 
     await query.edit_message_text(full_text)
+
+
+async def cmd_buddha(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_id = update.effective_user.id
+    user = await repository.get_user(user_id)
+    if not user:
+        await update.message.reply_text("Please /start first.")
+        return
+
+    query_parts = context.args
+    if not query_parts:
+        await update.message.reply_text(
+            "Ask the Buddha about your finances.\n\n"
+            "Usage: /buddha <your question>\n\n"
+            "Examples:\n"
+            "  /buddha I keep overspending on shopping\n"
+            "  /buddha How should I think about debt?\n"
+            "  /buddha Is saving money selfish?"
+        )
+        return
+
+    query = " ".join(query_parts).strip()
+    if len(query) > _MAX_BUDDHA_QUERY_LEN:
+        query = query[:_MAX_BUDDHA_QUERY_LEN]
+
+    thinking = await update.message.reply_text("The Buddha contemplates...")
+
+    try:
+        wisdom = await generate_buddha_wisdom(
+            query=query,
+            user_currency=user["default_currency"],
+        )
+        await thinking.edit_text(f"The Buddha speaks:\n\n{wisdom}")
+    except Exception as exc:
+        logger.error("generate_buddha_wisdom failed: %s", exc)
+        await thinking.edit_text("The Buddha is silent for now. Please try again.")

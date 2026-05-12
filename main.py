@@ -19,7 +19,7 @@ from bot.handlers_accounts import (
     cmd_new_account,
 )
 from bot.handlers_budget import cmd_advice, cmd_budgets, cmd_report, cmd_set_budget
-from bot.handlers_literacy import callback_quiz_answer, cmd_learn, cmd_quiz
+from bot.handlers_literacy import callback_quiz_answer, cmd_buddha, cmd_learn, cmd_quiz
 from bot.handlers_transactions import (
     callback_pick_account,
     cmd_delete,
@@ -76,6 +76,7 @@ def build_application() -> Application:
 
     app.add_handler(CommandHandler("learn", cmd_learn))
     app.add_handler(CommandHandler("quiz", cmd_quiz))
+    app.add_handler(CommandHandler("buddha", cmd_buddha))
 
     app.add_handler(CallbackQueryHandler(callback_set_currency, pattern=r"^setcur:"))
     app.add_handler(CallbackQueryHandler(callback_pick_account, pattern=r"^txacc:"))

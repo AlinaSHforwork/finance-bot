@@ -1,13 +1,31 @@
 # Finance Bot
 
-AI-powered financial literacy and budgeting chatbot for Telegram.
+AI-powered financial literacy and budgeting chatbot for Telegram, guided by the wisdom of the Dharma.
+
+## Elevator Pitch
+
+Finance Bot helps everyday users track income and expenses, set budgets, and understand their financial behaviour — all through natural language. What sets it apart: every insight, analysis, and piece of advice is delivered through the voice of the Buddha, grounded in a curated Buddhist knowledge base. The bot implements a **RAG (Retrieval-Augmented Generation)** pattern: relevant Dharma teachings are retrieved from a local vector-free keyword knowledge base and injected into every AI prompt, ensuring that financial guidance is always rooted in specific, contextual wisdom rather than generic LLM output.
+
+## Target Audience
+
+- Young professionals beginning to manage their own finances
+- Anyone seeking a mindful, non-anxious approach to money
+- Students learning personal finance concepts in an engaging format
+
+## AI Patterns Implemented
+
+| Pattern | Where |
+|---|---|
+| **RAG** | `ai/buddhist_kb.py` — keyword-scored retrieval from 12 curated Dharma teachings; injected into every advice, analysis, learn, and `/buddha` prompt |
+| **Structured Output** | `ai/client.py` — `parse_transaction` forces JSON schema output from the LLM and validates it strictly before use |
+| **Multi-role prompting** | `/advice` calls two separate AI roles (spending analyst + financial advisor) and merges their outputs |
 
 ## Stack
 
 - Python 3.11
 - python-telegram-bot 20.x (async)
 - PostgreSQL via asyncpg
-- Gemini API (xAI) for NLP
+- Gemini API (gemini-2.5-flash-lite) for NLP
 - Matplotlib for charts
 - APScheduler for scheduled tips
 
@@ -16,7 +34,7 @@ AI-powered financial literacy and budgeting chatbot for Telegram.
 ### 1. Clone and configure
 
 ```bash
-cp .env.example .env
+cp env.example .env
 ```
 
 Edit `.env`:
@@ -36,14 +54,9 @@ docker compose up -d
 ### 3. Run locally
 
 ```bash
-# Create and activate virtualenv
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
-
-# Start PostgreSQL separately, then run:
 python main.py
 ```
 
@@ -51,36 +64,25 @@ python main.py
 
 ```
 finance_bot/
-├── main.py                     # Entry point, bot setup
+├── main.py
 ├── ai/
-│   └── client.py               # Gemini API integration
+│   ├── buddhist_kb.py          # RAG knowledge base (12 Dharma teachings + retrieval)
+│   └── client.py               # Gemini API integration with RAG injection
 ├── bot/
-│   ├── handlers_user.py        # Registration, settings
-│   ├── handlers_transactions.py# NLP transaction logging
-│   ├── handlers_budget.py      # Reports, budgets, advice
-│   └── handlers_literacy.py    # Quiz and learn commands
+│   ├── handlers_user.py
+│   ├── handlers_transactions.py
+│   ├── handlers_budget.py
+│   └── handlers_literacy.py    # /learn, /quiz, /buddha
 ├── core/
-│   └── scheduler.py            # Daily tips scheduler
+│   └── scheduler.py
 ├── db/
-│   ├── database.py             # Connection pool, schema init
-│   └── repository.py           # All DB queries
+│   ├── database.py
+│   └── repository.py
 └── utils/
-    ├── charts.py               # Matplotlib chart generation
-    ├── constants.py            # Categories, currencies, topics
-    └── formatters.py           # Text formatting helpers
+    ├── charts.py
+    ├── constants.py
+    └── formatters.py
 ```
-
-## Features
-
-- Natural language transaction logging ("spent $20 on coffee")
-- Expense and income tracking with categories
-- Per-category budget limits with visual progress bars
-- Monthly reports with pie charts and bar charts
-- AI-generated personalized financial advice
-- Financial literacy concepts on demand
-- AI-generated multiple-choice quizzes
-- Daily scheduled financial tips (9:00 UTC)
-- Multi-currency support
 
 ## Commands
 
@@ -91,12 +93,22 @@ finance_bot/
 | /help | Show all commands |
 | /profile | View your profile |
 | /setcurrency | Change default currency |
-| /setmonthlybudget <amount> | Set total monthly budget |
+| /setmonthlybudget \<amount\> | Set total monthly budget |
 | /history | Last 15 transactions |
-| /delete <id> | Delete a transaction |
+| /delete \<id\> | Delete a transaction |
 | /report | Monthly summary with charts |
-| /setbudget <category> <amount> | Set category budget limit |
+| /setbudget \<category\> \<amount\> | Set category budget limit |
 | /budgets | View budgets vs spending |
-| /advice | Get AI financial advice |
-| /learn | Get a financial concept |
+| /advice | Get AI financial advice (Buddha voice + RAG) |
+| /learn | Get a financial concept (Buddha voice + RAG) |
 | /quiz | Take a finance quiz |
+| /buddha \<question\> | Ask the Buddha directly (RAG-grounded response) |
+
+## How RAG Works
+
+1. User triggers `/advice`, `/learn`, or `/buddha <question>`.
+2. `search_teachings(query)` in `ai/buddhist_kb.py` scores all 12 teachings by keyword overlap with the query (tag matches weighted ×3, body text matches ×1).
+3. The top-k teachings are formatted and injected into the system prompt sent to Gemini.
+4. Gemini responds in the voice of the Buddha, grounded in the retrieved teachings rather than generic LLM output.
+
+This ensures responses are consistent, on-topic, and traceable to a known knowledge base — a core property of RAG systems.

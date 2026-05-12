@@ -8,6 +8,8 @@ from typing import Any, Optional
 import google.generativeai as genai
 from google.generativeai.types import GenerationConfig
 
+from ai.buddhist_kb import format_context, search_teachings
+
 
 @dataclass
 class ParsedTransaction:
@@ -149,23 +151,30 @@ async def generate_financial_advice(
     alerts_info = "\n".join(budget_alerts) if budget_alerts else "No budget exceeded."
     accounts_info = "\n".join(f"- {acc['name']}: {acc['balance']} {currency}" for acc in accounts) if accounts else "No accounts found."
 
+    rag_query = f"budget advice spending {' '.join(a.split(':')[0].lower() for a in budget_alerts) if budget_alerts else 'balance generosity savings'}"
+    teachings = search_teachings(rag_query, top_k=2)
+    dharma_context = format_context(teachings)
+
     system = (
-        "You are a friendly and practical personal finance advisor. "
-        "Analyze spending data and provide concise, actionable advice. "
-        "Keep the response under 200 words. Use bullet points. Be specific and encouraging."
+        "You are the Buddha — compassionate, calm, and deeply wise. "
+        "You speak in the voice of the Awakened One: gentle, clear, unhurried, with occasional Pali terms explained simply. "
+        "You frame financial guidance through the lens of the Dharma: the Middle Way, impermanence, non-attachment, and right livelihood. "
+        "You never mock or shame. You offer practical steps wrapped in spiritual insight. "
+        "Keep the response under 220 words. Use short paragraphs, no bullet points."
     )
 
     user_msg = (
-        f"User: {user_name}\n"
+        f"Seeker's name: {user_name}\n"
         f"Currency: {currency}\n"
         f"{budget_info}\n"
         f"Budget alerts:\n{alerts_info}\n"
         f"Spending this month:\n{spending_summary}\n\n"
         f"Accounts:\n{accounts_info}\n\n"
-        "Provide 3-5 personalized financial tips based on this data."
+        f"Relevant Dharma teachings for context:\n{dharma_context}\n\n"
+        "Offer 3-5 personalized pieces of financial wisdom rooted in Buddhist teaching."
     )
 
-    return await _chat(system, user_msg, temperature=0.7, max_tokens=400)
+    return await _chat(system, user_msg, temperature=0.7, max_tokens=450)
 
 
 async def generate_spending_analysis(
@@ -174,13 +183,20 @@ async def generate_spending_analysis(
     income_total: Decimal,
     expense_total: Decimal,
 ) -> str:
+    categories_str = " ".join(cat for cat, _ in category_totals)
+    teachings = search_teachings(f"report reflection {categories_str}", top_k=2)
+    dharma_context = format_context(teachings)
+
     totals_text = "\n".join(
         f"- {cat}: {amount:.2f} {currency}" for cat, amount in category_totals
     )
 
     system = (
-        "You are a concise financial analyst. Identify spending patterns and provide "
-        "2-3 key observations. Keep response under 150 words. Be direct and factual."
+        "You are the Buddha — compassionate, calm, and deeply wise. "
+        "You speak in the voice of the Awakened One: gentle, clear, with occasional Pali terms explained simply. "
+        "You observe financial patterns with equanimity, neither praising nor condemning. "
+        "You see in numbers the story of the mind's cravings and wisdom. "
+        "Keep response under 160 words. Use short paragraphs."
     )
 
     user_msg = (
@@ -189,10 +205,40 @@ async def generate_spending_analysis(
         f"Total expenses: {expense_total:.2f} {currency}\n"
         f"Net: {income_total - expense_total:.2f} {currency}\n"
         f"Expense breakdown:\n{totals_text}\n\n"
-        "What are the key observations about this spending pattern?"
+        f"Relevant Dharma teachings:\n{dharma_context}\n\n"
+        "What patterns do you observe in this seeker's financial conduct?"
     )
 
-    return await _chat(system, user_msg, temperature=0.5, max_tokens=300)
+    return await _chat(system, user_msg, temperature=0.5, max_tokens=320)
+
+
+async def generate_buddha_wisdom(
+    query: str,
+    user_currency: str,
+    spending_context: Optional[str] = None,
+) -> str:
+    teachings = search_teachings(query, top_k=3)
+    dharma_context = format_context(teachings)
+
+    system = (
+        "You are the Buddha — compassionate, calm, and deeply wise. "
+        "You speak in the voice of the Awakened One: gentle, clear, unhurried, with occasional Pali or Sanskrit terms explained simply. "
+        "You address questions about money, spending, debt, saving, and wealth through the lens of the Dharma. "
+        "You do not give dry financial advice; you illuminate the mind that relates to money. "
+        "You never shame the seeker. You always point toward liberation. "
+        "Keep response under 180 words."
+    )
+
+    context_block = f"Seeker's spending context: {spending_context}\n\n" if spending_context else ""
+
+    user_msg = (
+        f"{context_block}"
+        f"Relevant Dharma teachings from the knowledge base:\n{dharma_context}\n\n"
+        f"Seeker's question: {query}\n\n"
+        "Respond as the Buddha, grounding your answer in the provided teachings."
+    )
+
+    return await _chat(system, user_msg, temperature=0.75, max_tokens=400)
 
 
 async def generate_quiz_question(topic: str) -> Optional[dict[str, Any]]:
@@ -230,14 +276,21 @@ async def generate_quiz_question(topic: str) -> Optional[dict[str, Any]]:
 
 
 async def get_literacy_concept(concept_key: str) -> str:
+    teachings = search_teachings(concept_key, top_k=1)
+    dharma_context = format_context(teachings)
+
     system = (
-        "You are a financial educator. Explain personal finance concepts clearly and concisely "
-        "for beginners. Keep explanations under 120 words. Use simple language and one practical example."
+        "You are the Buddha — compassionate, calm, and deeply wise. "
+        "You explain personal finance concepts by weaving together practical clarity and Dharma wisdom. "
+        "Keep explanations under 140 words. Use simple language and one practical example. "
+        "End with a short reflection rooted in Buddhist teaching."
     )
+
+    context_block = f"Related Dharma teaching:\n{dharma_context}\n\n" if dharma_context else ""
 
     return await _chat(
         system,
-        f"Explain the concept of '{concept_key}' in personal finance.",
+        f"{context_block}Explain the personal finance concept of '{concept_key}'.",
         temperature=0.6,
-        max_tokens=200,
+        max_tokens=220,
     )

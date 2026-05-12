@@ -18,7 +18,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     text = (
         f"Welcome, {user.first_name}!\n\n"
-        "I am your personal finance assistant.\n\n"
+        "I am your personal finance assistant, guided by the wisdom of the Dharma.\n\n"
         "Get started by creating an account:\n"
         "/newaccount <name> <type> <currency> [balance]\n\n"
         "Examples:\n"
@@ -28,6 +28,7 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Then just type to log transactions:\n"
         "  'spent 200 on food from Cash'\n"
         "  'received 5000 salary to MyCard'\n\n"
+        "Ask the Buddha for financial wisdom: /buddha <your question>\n\n"
         "Use /help to see all commands."
     )
     await update.message.reply_text(text)
@@ -49,9 +50,10 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "  /setbudget <category> <amount> — set spending limit\n"
         "  /budgets — view budget progress\n"
         "  /advice — get AI financial advice\n\n"
-        "Learning:\n"
+        "Learning & Wisdom:\n"
         "  /learn — get a financial concept\n"
-        "  /quiz — take a finance quiz\n\n"
+        "  /quiz — take a finance quiz\n"
+        "  /buddha <question> — ask the Buddha for financial wisdom\n\n"
         "Settings:\n"
         "  /setcurrency — change default currency\n"
         "  /setmonthlybudget <amount> — set total monthly limit\n"
